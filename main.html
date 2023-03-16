@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Data Acquisition Prototype</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+
+</head>
+<header>
+    <div class="header-image"> 
+    </div>
+    <h1 id="title">Personal Acquisition Prototype</h1>
+    <h2 id="Chart title"> Live Acceleration Data </h2>
+</header>
+<body>
+
+    <div class="chart">
+        <canvas id="datachart"></canvas>
+    </div>
+        <script>
+            /* Create data and config variables
+             * Config - Used to hold plot configurations
+             * data - holds datasets and data labels */ 
+            const data = {
+                labels: [],
+                datasets: [{
+                    fill: false,
+                    label: 'Motion X',
+                    data: [],
+                    borderColor: "#1e81b0"
+
+                }],
+            };
+
+            const config = {
+                type: "line",
+                data: data,
+                options: {
+                    legend: {display: false},
+                    scales: {
+                        yAxes: [{ticks: {min: 0, max:150}}],
+                    },
+                }
+            };
+
+
+        //Main
+         let mode = 0;
+        
+        function stopChart(){
+            if (mode == 0){         //mode is off
+                mode = 1;
+            }
+            else {                  //mode is already off
+                mode = 0;
+        
+            }
+           console.log(mode)
+        }
+
+        function clearChart(){
+            config.data.labels = [];
+            config.data.datasets[0].data = [];
+        }
+
+        const browserContext = document.getElementById('datachart').getContext('2d');
+
+        let chart = new Chart(browserContext, config);
+
+        let xSource = new EventSource("/livexdata");
+
+        xSource.onmessage = function (event) {
+            if(mode == 1){
+                chart.stop();
+            }
+            else{
+                const data = JSON.parse(event.data);
+                if (config.data.labels.length === 200) {         //adjust chart
+                    config.data.labels.shift();                 // labels
+                    config.data.datasets[0].data.shift();       //
+                }
+                config.data.labels.push(data.time);             //push time onto label
+                config.data.datasets[0].data.push(data.value);  // write new value
+            
+                chart.update();                               //update line
+            }
+        }
+
+    </script>
+    <button type="button" onclick=stopChart()> Start/Stop Chart</button>
+    <button type="button" onclick=clearChart()> Clear Chart </button>
+</body>
+</html>
