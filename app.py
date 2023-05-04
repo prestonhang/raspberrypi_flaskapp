@@ -35,6 +35,8 @@ def query_row(conn, value):
         cur.execute("SELECT * FROM XDATA ORDER by time DESC LIMIT 1")
     elif(value == 1):
         cur.execute("SELECT * FROM YDATA ORDER by time DESC LIMIT 1")
+    elif(value == 2):
+        cur.execute("SELECT * FROM ZDATA ORDER by time DESC LIMIT 1")
     row = cur.fetchone()
     return row
 
@@ -65,12 +67,22 @@ def grab_x_row(conn):
         json_data = json.dumps(
             {"name": row[0], 'value': row[1], 'time': row[2]})
         yield f"data:{json_data}\n\n"
-        time.sleep(0.1)
+        time.sleep(50/1000)
         
     
 # Grab row and convert to JSON 
 def grab_y_row(conn):
     value = 1
+    while True:
+        row = query_row(conn, value)
+        json_data = json.dumps(
+            {"name": row[0], 'value': row[1], 'time': row[2]})
+        yield f"data:{json_data}\n\n"
+        time.sleep(50/1000)
+
+# Grab row and convert to JSON 
+def grab_z_row(conn):
+    value = 2
     while True:
         row = query_row(conn, value)
         json_data = json.dumps(
@@ -98,6 +110,7 @@ def livexdata():
 
     return response
 
+#localhost:5000/liveydata - View JSON data taken from SQL
 @app.route("/liveydata", methods=['GET', 'POST'])
 def liveydata():
     conn = connect_sqlite()
@@ -107,6 +120,15 @@ def liveydata():
 
     return response
 
+#localhost:5000/livezdata - View JSON data taken from SQL
+@app.route("/livezdata", methods=['GET', 'POST'])
+def livezdata():
+    conn = connect_sqlite()
+    response = Response(stream_with_context(grab_z_row(conn)), mimetype="text/event-stream")
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["X-Accel-Buffering"] = 'no'
+
+    return response
 
 # Home page - Render main.html page
 @app.route("/")

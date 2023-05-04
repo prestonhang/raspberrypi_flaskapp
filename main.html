@@ -6,30 +6,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personal Data Acquisition Prototype</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+    <link rel="stylesheet" href="style.css"/>
 
 </head>
 <header>
     <div class="header-image"> 
     </div>
     <h1 id="title">Personal Acquisition Prototype</h1>
-    <h2 id="Chart title"> Live Acceleration Data </h2>
 </header>
 <body>
 
+    <div class="totalchart">
+        <h2 id="totalchart"> Total Accelerometer Chart </h2>
+        <canvas id="fullchart"></canvas>
+    </div>
     <div class="chart">
-        <canvas id="datachart"></canvas>
+        <h2 id="x-chart-title"> Live X Data </h2>
+        <canvas id="datachart_x"></canvas>
+    </div>
+    <div class="chart2">
+        <h2 id="Y-chart-title"> Live Y Data </h2>
+        <canvas id="datachart_y"></canvas>
+    </div>
+    <div class="chart3">
+        <h2 id="Z-chart-title"> Live Z Data </h2>
+        <canvas id="datachart_z"></canvas>
     </div>
         <script>
-            /* Create data and config variables
+              /* Create data and config variables
              * Config - Used to hold plot configurations
              * data - holds datasets and data labels */ 
-            const data = {
+             const data = {
                 labels: [],
                 datasets: [{
                     fill: false,
                     label: 'Motion X',
                     data: [],
                     borderColor: "#1e81b0"
+
+                },
+                {
+                    fill: false,
+                    label: 'Motion Y',
+                    data: [],
+                    borderColor: "#00b300"
+
+                },
+                {
+                    fill: false,
+                    label: 'Motion Z',
+                    data: [],
+                    borderColor: "#ff4c4c"
 
                 }],
             };
@@ -42,9 +69,84 @@
                     scales: {
                         yAxes: [{ticks: {min: 0, max:150}}],
                     },
-                }
+                    animation: false,
+                    normalized: true,
+                    parsing: false,
+                },
+            };
+            const data_x = {
+                labels: [],
+                datasets: [{
+                    fill: false,
+                    label: 'Motion Y',
+                    data: [],
+                    borderColor: "#1e81b0"
+
+                }],
             };
 
+            const config_x = {
+                type: "line",
+                data: data_x,
+                options: {
+                    legend: {display: false},
+                    scales: {
+                        yAxes: [{ticks: {min: 0, max:150}}],
+                    },
+                    animation: false,
+                    normalized: true,
+                    parsing: false,
+                },
+            };
+            const data_y = {
+                labels: [],
+                datasets: [{
+                    fill: false,
+                    label: 'Motion Y',
+                    data: [],
+                    borderColor: "#00b300"
+
+                }],
+            };
+
+            const config_y = {
+                type: "line",
+                data: data_y,
+                options: {
+                    legend: {display: false},
+                    scales: {
+                        yAxes: [{ticks: {min: 0, max:150}}],
+                    },
+                    animation: false,
+                    normalized: true,
+                    parsing: false,
+                },
+            };
+
+            const data_z = {
+                labels: [],
+                datasets: [{
+                    fill: false,
+                    label: 'Motion Z',
+                    data: [],
+                    borderColor: "#ff4c4c"
+
+                }],
+            };
+
+            const config_z = {
+                type: "line",
+                data: data_z,
+                options: {
+                    legend: {display: false},
+                    scales: {
+                        yAxes: [{ticks: {min: 0, max:150}}],
+                    },
+                    animation: false,
+                    normalized: true,
+                    parsing: false,
+                },
+            };
 
         //Main
          let mode = 0;
@@ -65,28 +167,81 @@
             config.data.datasets[0].data = [];
         }
 
-        const browserContext = document.getElementById('datachart').getContext('2d');
+        const browserContext0 = document.getElementById('fullchart').getContext('2d');
+        const browserContext1 = document.getElementById('datachart_x').getContext('2d');
+        const browserContext2 = document.getElementById('datachart_y').getContext('2d');
+        const browserContext3 = document.getElementById('datachart_z').getContext('2d');
 
-        let chart = new Chart(browserContext, config);
+        let chartTotal = new Chart(browserContext0, config);
+        let chartX = new Chart(browserContext1, config_x);
+        let chartY = new Chart(browserContext2, config_y);
+        let chartZ = new Chart(browserContext3, config_z);
 
         let xSource = new EventSource("/livexdata");
+        let ySource = new EventSource("/liveydata");
+        let zSource = new EventSource("/livezdata");
 
         xSource.onmessage = function (event) {
             if(mode == 1){
-                chart.stop();
+                chartTotal.stop();
+                chartX.stop();
             }
             else{
-                const data = JSON.parse(event.data);
-                if (config.data.labels.length === 200) {         //adjust chart
+                const newdata = JSON.parse(event.data);
+                if (config.data.labels.length === 300) {         //adjust chart
                     config.data.labels.shift();                 // labels
+                    config_x.data.labels.shift();
+
                     config.data.datasets[0].data.shift();       //
+                    config.data.datasets[1].data.shift();
+                    config.data.datasets[2].data.shift();
+                    config_x.data.datasets[0].data.shift();
                 }
-                config.data.labels.push(data.time);             //push time onto label
-                config.data.datasets[0].data.push(data.value);  // write new value
-            
-                chart.update();                               //update line
+                config.data.labels.push(newdata.time);             //push time onto label
+                config_x.data.labels.push(newdata.time);
+                config_x.data.datasets[0].data.push(newdata.value);
+                config.data.datasets[0].data.push(newdata.value);  // write new value
+                
+                chartTotal.update();
+                chartX.update();                               //update line
             }
         }
+
+        ySource.onmessage = function (event) {
+            if(mode == 1){
+                chartY.stop();
+            }
+            else{
+                const newdata = JSON.parse(event.data);
+                if (config_y.data.labels.length === 300) {         //adjust chart
+                    config_y.data.labels.shift();                 // labels
+                    config_y.data.datasets[0].data.shift();       //
+                }
+                config_y.data.labels.push(newdata.time);             //push time onto label
+                config_y.data.datasets[0].data.push(newdata.value);  // write new value
+                config.data.datasets[1].data.push(newdata.value);   // write new value to total chart
+                chartY.update();                               //update line
+            }
+        }
+
+        zSource.onmessage = function (event) {
+            if(mode == 1){
+                chartZ.stop();
+            }
+            else{
+                const newdata = JSON.parse(event.data);
+                if (config_z.data.labels.length === 300) {         //adjust chart
+                    config_z.data.labels.shift();                 // labels
+                    config_z.data.datasets[0].data.shift();       //
+                }
+                config_z.data.labels.push(newdata.time);             //push time onto label
+                config_z.data.datasets[0].data.push(newdata.value);  // write new value to Z chart
+                config.data.datasets[2].data.push(newdata.value);  // write new value to Total Chart
+                chartZ.update();                               //update line
+            }
+        }
+
+
 
     </script>
     <button type="button" onclick=stopChart()> Start/Stop Chart</button>
